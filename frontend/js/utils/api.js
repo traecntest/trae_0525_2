@@ -33,8 +33,12 @@ const API = {
         throw new Error(data.message || 'Unauthorized');
       }
 
-      if (!response.ok && data.code >= 400) {
-        throw new Error(data.message || 'Request failed');
+      if (!response.ok) {
+        let errorMessage = data.message || 'Request failed';
+        if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+          errorMessage = data.errors.map(e => e.message).join('; ');
+        }
+        throw new Error(errorMessage);
       }
 
       return data.data || data;
