@@ -53,7 +53,7 @@ CREATE TABLE `users` (
   `id` VARCHAR(36) NOT NULL,
   `tenant_id` VARCHAR(36) NOT NULL COMMENT 'FK: tenants.id',
   `username` VARCHAR(50) NOT NULL,
-  `email` VARCHAR(100) NOT NULL,
+  `email` VARCHAR(100) NULL,
   `password` VARCHAR(255) NOT NULL COMMENT 'Bcrypt hashed',
   `full_name` VARCHAR(100),
   `avatar` VARCHAR(500),

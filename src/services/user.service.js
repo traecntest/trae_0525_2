@@ -81,7 +81,7 @@ class UserService {
       throw new ConflictError('Username or email already exists');
     }
 
-    const hashedPassword = await bcrypt.hash(userData.password || '123456', 10);
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
 
     const userDataToCreate = {
       id: generateId('user'),

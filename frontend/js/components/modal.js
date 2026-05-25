@@ -84,14 +84,14 @@ const Modal = {
         formHtml += `
           <div class="form-group">
             <label class="form-label">${field.label}${field.required ? ' *' : ''}</label>
-            <textarea class="form-textarea" name="${field.name}" ${field.required ? 'required' : ''} placeholder="${field.placeholder || ''}">${value}</textarea>
+            <textarea class="form-textarea" name="${field.name}" ${field.required ? 'required' : ''} ${field.minLength ? `minlength="${field.minLength}"` : ''} ${field.maxLength ? `maxlength="${field.maxLength}"` : ''} placeholder="${field.placeholder || ''}">${value}</textarea>
           </div>
         `;
       } else {
         formHtml += `
           <div class="form-group">
             <label class="form-label">${field.label}${field.required ? ' *' : ''}</label>
-            <input type="${field.type || 'text'}" class="form-input" name="${field.name}" value="${value}" ${field.required ? 'required' : ''} placeholder="${field.placeholder || ''}" ${field.type === 'number' ? 'step="any"' : ''}>
+            <input type="${field.type || 'text'}" class="form-input" name="${field.name}" value="${value}" ${field.required ? 'required' : ''} ${field.minLength ? `minlength="${field.minLength}"` : ''} ${field.maxLength ? `maxlength="${field.maxLength}"` : ''} ${field.min ? `min="${field.min}"` : ''} ${field.max ? `max="${field.max}"` : ''} ${field.pattern ? `pattern="${field.pattern}"` : ''} placeholder="${field.placeholder || ''}" ${field.type === 'number' ? 'step="any"' : ''}>
           </div>
         `;
       }
@@ -102,6 +102,10 @@ const Modal = {
       content: `<form id="modalForm">${formHtml}</form>`,
       onConfirm: (overlay) => {
         const form = overlay.querySelector('#modalForm');
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          return false;
+        }
         const formData = new FormData(form);
         const data = {};
         formData.forEach((value, key) => {

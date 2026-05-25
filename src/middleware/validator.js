@@ -59,6 +59,26 @@ const schemas = {
     fullName: Joi.string().max(100),
   }),
 
+  userCreate: Joi.object({
+    username: Joi.string().min(3).max(50).required(),
+    email: Joi.string().email().allow(null, ''),
+    password: Joi.string().min(6).max(100).required(),
+    fullName: Joi.string().max(100),
+    phone: Joi.string().max(20),
+    status: Joi.number().integer().valid(0, 1),
+    roleIds: Joi.array().items(Joi.string().uuid()),
+  }),
+
+  userUpdate: Joi.object({
+    username: Joi.string().min(3).max(50),
+    email: Joi.string().email().allow(null, ''),
+    password: Joi.string().min(6).max(100),
+    fullName: Joi.string().max(100),
+    phone: Joi.string().max(20),
+    status: Joi.number().integer().valid(0, 1),
+    roleIds: Joi.array().items(Joi.string().uuid()),
+  }),
+
   model: Joi.object({
     name: Joi.string().required(),
     code: Joi.string(),

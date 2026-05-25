@@ -84,7 +84,7 @@ const UsersPage = {
         { name: 'fullName', label: '姓名', required: true },
         { name: 'email', label: '邮箱', type: 'email' },
         { name: 'phone', label: '手机' },
-        { name: 'password', label: '密码', type: 'password', required: true },
+        { name: 'password', label: '密码', type: 'password', required: true, minLength: 6, placeholder: '至少 6 位' },
       ],
       onSubmit: async (data) => {
         try {

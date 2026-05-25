@@ -19,6 +19,10 @@ const Form = {
 
     container.querySelector('#dynamicForm').addEventListener('submit', (e) => {
       e.preventDefault();
+      if (!e.target.checkValidity()) {
+        e.target.reportValidity();
+        return;
+      }
       const formData = new FormData(e.target);
       const data = {};
       formData.forEach((value, key) => {
