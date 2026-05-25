@@ -4,15 +4,17 @@ const modelRoutes = require('./model.routes');
 const iotRoutes = require('./iot.routes');
 const spatialRoutes = require('./spatial.routes');
 const businessRoutes = require('./business.routes');
-const { authenticateApiKey } = require('../middleware/auth');
+const userRoutes = require('./user.routes');
+const { authenticateJWT, authenticateApiKey } = require('../middleware/auth');
 
 const router = express.Router();
 
 router.use('/auth', authRoutes);
-router.use('/models', authenticateApiKey, modelRoutes);
-router.use('/iot', authenticateApiKey, iotRoutes);
-router.use('/spatial', authenticateApiKey, spatialRoutes);
-router.use('/', authenticateApiKey, businessRoutes);
+router.use('/users', userRoutes);
+router.use('/models', authenticateJWT, modelRoutes);
+router.use('/iot', authenticateJWT, iotRoutes);
+router.use('/spatial', authenticateJWT, spatialRoutes);
+router.use('/business', authenticateJWT, businessRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({

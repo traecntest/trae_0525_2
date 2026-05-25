@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../../config/index');
 const { User } = require('../models');
 const logger = require('../../config/logger');
+const { UnauthorizedError, ForbiddenError } = require('./error');
 
 function generateAccessToken(user) {
   return jwt.sign(
@@ -41,6 +42,59 @@ function verifyRefreshToken(token) {
   } catch (error) {
     return null;
   }
+}
+
+async function authenticateJWT(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new UnauthorizedError('No token provided');
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = verifyAccessToken(token);
+
+    if (!decoded) {
+      throw new UnauthorizedError('Invalid or expired token');
+    }
+
+    const user = await User.findByPk(decoded.id, {
+      include: [{ association: 'roles' }],
+    });
+
+    if (!user || user.status !== 1) {
+      throw new UnauthorizedError('User not found or inactive');
+    }
+
+    req.user = user;
+    req.tenantId = user.tenantId;
+    req.userId = user.id;
+    req.userRoles = user.roles?.map((r) => r.code) || [];
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
+function requirePermission(permission) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return next(new UnauthorizedError('Authentication required'));
+    }
+
+    if (req.userRoles?.includes('admin')) {
+      return next();
+    }
+
+    const userPermissions = req.user.roles?.flatMap((r) => r.permissions || []) || [];
+    if (!userPermissions.includes(permission)) {
+      return next(new ForbiddenError(`Permission denied: ${permission}`));
+    }
+
+    next();
+  };
 }
 
 async function authenticate(req, res, next) {
@@ -144,7 +198,7 @@ function optionalAuth(req, res, next) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return next();
   }
-  return authenticate(req, res, next);
+  return authenticateJWT(req, res, next);
 }
 
 module.exports = {
@@ -153,6 +207,8 @@ module.exports = {
   verifyAccessToken,
   verifyRefreshToken,
   authenticate,
+  authenticateJWT,
   authenticateApiKey,
+  requirePermission,
   optionalAuth,
 };
