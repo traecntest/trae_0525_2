@@ -106,14 +106,14 @@ class Application {
   setupRoutes() {
     this.app.use('/api/v1', routes);
 
+    this.app.use(express.static(path.join(process.cwd(), 'frontend')));
+
     this.app.get('/', (_req, res) => {
-      res.json({
-        name: 'Digital Twin City & CIM Platform',
-        version: '1.0.0',
-        description: 'Comprehensive support system for urban digital twin and City Information Modeling',
-        docs: '/api/v1/docs',
-        health: '/api/v1/health',
-      });
+      res.sendFile(path.join(process.cwd(), 'frontend', 'index.html'));
+    });
+
+    this.app.get(/^\/(?!api\/|uploads\/|assets\/).*/, (_req, res) => {
+      res.sendFile(path.join(process.cwd(), 'frontend', 'index.html'));
     });
   }
 

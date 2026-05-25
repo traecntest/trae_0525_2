@@ -10,6 +10,7 @@ async function initializeDatabase() {
     port: config.database.port,
     user: config.database.user,
     password: config.database.password,
+    socketPath: process.env.DB_SOCKET_PATH || '/var/run/mysqld/mysqld.sock',
     multipleStatements: true,
   });
 

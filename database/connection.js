@@ -10,6 +10,9 @@ const sequelize = new Sequelize(
     host: config.database.host,
     port: config.database.port,
     dialect: config.database.dialect,
+    dialectOptions: {
+      socketPath: process.env.DB_SOCKET_PATH || '/var/run/mysqld/mysqld.sock',
+    },
     timezone: config.database.timezone,
     pool: config.database.pool,
     logging: config.database.logging
