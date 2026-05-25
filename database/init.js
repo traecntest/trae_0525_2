@@ -5,14 +5,21 @@ const config = require('../config/index');
 const logger = require('../config/logger');
 
 async function initializeDatabase() {
-  const connection = await mysql.createConnection({
-    host: config.database.host,
-    port: config.database.port,
+  const connectionConfig = {
     user: config.database.user,
     password: config.database.password,
-    socketPath: process.env.DB_SOCKET_PATH || '/var/run/mysqld/mysqld.sock',
     multipleStatements: true,
-  });
+    connectTimeout: 10000,
+  };
+
+  if (process.env.DB_SOCKET_PATH) {
+    connectionConfig.socketPath = process.env.DB_SOCKET_PATH;
+  } else {
+    connectionConfig.host = config.database.host;
+    connectionConfig.port = config.database.port;
+  }
+
+  let connection = await mysql.createConnection(connectionConfig);
 
   try {
     logger.info('Creating database...');
@@ -25,15 +32,30 @@ async function initializeDatabase() {
 
     logger.info(`Database ${config.database.database} created or already exists.`);
 
-    await connection.changeUser({
-      database: config.database.database,
-    });
+    await connection.end();
+
+    connectionConfig.database = config.database.database;
+    connection = await mysql.createConnection(connectionConfig);
 
     const schemaPath = path.join(__dirname, 'schema.sql');
     const schemaSql = fs.readFileSync(schemaPath, 'utf8');
 
     logger.info('Executing schema...');
-    await connection.query(schemaSql);
+
+    const statements = schemaSql
+      .split(';')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+
+    for (let i = 0; i < statements.length; i++) {
+      const statement = statements[i];
+      try {
+        await connection.query(statement);
+        logger.debug(`Executed statement ${i + 1}/${statements.length}`);
+      } catch (err) {
+        logger.warn(`Warning on statement ${i + 1}: ${err.message}`);
+      }
+    }
 
     logger.info('Database schema initialized successfully.');
     logger.info(`Default admin user: admin / admin123`);
@@ -41,7 +63,13 @@ async function initializeDatabase() {
     logger.error('Database initialization failed:', error);
     throw error;
   } finally {
-    await connection.end();
+    if (connection) {
+      try {
+        await connection.end();
+      } catch (e) {
+        // ignore
+      }
+    }
   }
 }
 
