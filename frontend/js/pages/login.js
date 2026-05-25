@@ -51,14 +51,17 @@ const LoginPage = {
 
       try {
         const res = await API.auth.login({ username, password });
-        State.setToken(res.accessToken);
-        State.setUser(res.user);
-        State.setTenantId(tenantId);
+        localStorage.setItem('access_token', res.accessToken);
+        localStorage.setItem('user', JSON.stringify(res.user));
+        localStorage.setItem('tenant_id', tenantId);
         if (res.refreshToken) {
           localStorage.setItem('refresh_token', res.refreshToken);
         }
         Helpers.showToast('登录成功', 'success');
         window.location.hash = '#/dashboard';
+        setTimeout(() => {
+          window.location.reload();
+        }, 200);
       } catch (err) {
         Helpers.showToast(err.message || '登录失败', 'error');
       } finally {

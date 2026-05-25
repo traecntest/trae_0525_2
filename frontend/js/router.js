@@ -44,18 +44,23 @@ const Router = {
     }
 
     this.currentPath = path;
+    const loginPage = document.getElementById('loginPage');
+    const app = document.getElementById('app');
     const mainContainer = document.getElementById('mainContent');
     const sidebarContainer = document.getElementById('sidebarContainer');
     const topbarContainer = document.getElementById('topbarContainer');
 
     if (path === '/login') {
-      sidebarContainer.innerHTML = '';
-      topbarContainer.innerHTML = '';
+      loginPage.style.display = 'block';
+      app.style.display = 'none';
       if (this.routes['/login']) {
-        this.routes['/login'](mainContainer);
+        this.routes['/login'](loginPage);
       }
       return;
     }
+
+    loginPage.style.display = 'none';
+    app.style.display = 'flex';
 
     const pageTitles = {
       '/dashboard': '数据总览',
