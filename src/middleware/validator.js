@@ -297,6 +297,15 @@ const schemas = {
     ambientIntensity: Joi.number().min(0).max(1).default(0.5),
     tags: Joi.array().items(Joi.string()),
   }),
+
+  task: Joi.object({
+    name: Joi.string().required(),
+    taskType: Joi.string()
+      .valid('MODEL_PROCESS', 'MODEL_CONVERT', 'DATA_IMPORT', 'LOD_GENERATE', 'TILE_GENERATE', 'REPORT', 'CLEANUP', 'OTHER')
+      .required(),
+    inputData: Joi.object(),
+    priority: Joi.number().integer().min(1).max(10).default(5),
+  }),
 };
 
 module.exports = {

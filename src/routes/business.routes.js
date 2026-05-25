@@ -1,13 +1,10 @@
 const express = require('express');
 const EventController = require('../controllers/event.controller');
 const { BusinessController, SceneController, TaskController, TemporalController } = require('../controllers/business.controller');
-const { authenticate } = require('../middleware/auth');
-const { requirePermission } = require('../middleware/permission');
+const { requirePermission } = require('../middleware/auth');
 const { validate, validateQuery, validateParams, schemas } = require('../middleware/validator');
 
 const router = express.Router();
-
-router.use(authenticate);
 
 router.get('/events', validateQuery(schemas.pagination), EventController.getEvents);
 router.get('/events/stats', EventController.getEventStats);
@@ -37,7 +34,7 @@ router.delete('/scenes/:id/models', requirePermission('scene:write'), validatePa
 
 router.get('/tasks', validateQuery(schemas.pagination), TaskController.getTasks);
 router.get('/tasks/:id', validateParams(schemas.id), TaskController.getTaskById);
-router.post('/tasks', requirePermission('task:write'), TaskController.createTask);
+router.post('/tasks', requirePermission('task:write'), validate(schemas.task), TaskController.createTask);
 router.post('/tasks/:id/cancel', requirePermission('task:write'), validateParams(schemas.id), TaskController.cancelTask);
 router.post('/tasks/:id/retry', requirePermission('task:write'), validateParams(schemas.id), TaskController.retryTask);
 

@@ -20,13 +20,12 @@ function paginate(query, page = 1, limit = 20) {
 
 function buildPaginationResponse(rows, count, page, limit) {
   return {
-    data: rows,
-    pagination: {
-      page: parseInt(page, 10),
-      limit: parseInt(limit, 10),
-      total: count,
-      totalPages: Math.ceil(count / limit),
-    },
+    rows,
+    page: parseInt(page, 10),
+    limit: parseInt(limit, 10),
+    count,
+    total: count,
+    totalPages: Math.ceil(count / limit),
   };
 }
 
