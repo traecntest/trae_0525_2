@@ -550,7 +550,7 @@ INSERT INTO `roles` (`id`, `tenant_id`, `name`, `code`, `description`, `permissi
 -- Default admin user (password: admin123)
 INSERT INTO `users` (`id`, `tenant_id`, `username`, `email`, `password`, `full_name`, `status`) VALUES
 ('user_admin', 'default', 'admin', 'admin@system.com', 
- '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 
+ '$2a$10$uASdRW1BvSHNW53Vza5nc.M3N8.GmfFcFihP9jslShjmD0gyK35L.', 
  'System Administrator', 1);
 
 -- Assign admin role

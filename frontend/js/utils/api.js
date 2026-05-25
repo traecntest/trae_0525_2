@@ -25,19 +25,21 @@ const API = {
       const data = await response.json();
 
       if (response.status === 401) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('user');
-        window.location.hash = '#/login';
-        throw new Error('Unauthorized');
+        if (url !== '/auth/login') {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('user');
+          window.location.hash = '#/login';
+        }
+        throw new Error(data.message || 'Unauthorized');
       }
 
       if (!response.ok && data.code >= 400) {
         throw new Error(data.message || 'Request failed');
       }
 
-      return data;
+      return data.data || data;
     } catch (error) {
-      if (error.message !== 'Unauthorized') {
+      if (error.message !== 'Unauthorized' && !url.includes('/auth/login')) {
         console.error('API Error:', error);
       }
       throw error;
