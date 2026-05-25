@@ -80,11 +80,11 @@ const UsersPage = {
     Modal.form({
       title: '创建用户',
       fields: [
-        { name: 'username', label: '用户名', required: true },
-        { name: 'fullName', label: '姓名', required: true },
-        { name: 'email', label: '邮箱', type: 'email' },
-        { name: 'phone', label: '手机' },
-        { name: 'password', label: '密码', type: 'password', required: true, minLength: 6, placeholder: '至少 6 位' },
+        { name: 'username', label: '用户名', required: true, validateType: 'username', helpText: '3-50个字符，字母、数字、下划线或连字符，字母开头' },
+        { name: 'fullName', label: '姓名', required: true, validateType: 'fullName' },
+        { name: 'email', label: '邮箱', validateType: 'email', helpText: '选填，最大100字符' },
+        { name: 'phone', label: '手机', validateType: 'phone', helpText: '选填，支持中国大陆手机号或国际号码' },
+        { name: 'password', label: '密码', type: 'password', required: true, validateType: 'password' },
       ],
       onSubmit: async (data) => {
         try {
@@ -106,10 +106,10 @@ const UsersPage = {
       Modal.form({
         title: '编辑用户',
         fields: [
-          { name: 'username', label: '用户名', required: true },
-          { name: 'fullName', label: '姓名', required: true },
-          { name: 'email', label: '邮箱', type: 'email' },
-          { name: 'phone', label: '手机' },
+          { name: 'username', label: '用户名', required: true, validateType: 'username', helpText: '3-50个字符，字母、数字、下划线或连字符，字母开头' },
+          { name: 'fullName', label: '姓名', required: true, validateType: 'fullName' },
+          { name: 'email', label: '邮箱', validateType: 'email', helpText: '选填，最大100字符' },
+          { name: 'phone', label: '手机', validateType: 'phone', helpText: '选填，支持中国大陆手机号或国际号码' },
         ],
         values: user,
         onSubmit: async (data) => {

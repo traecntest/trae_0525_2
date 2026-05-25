@@ -9,6 +9,16 @@ function validate(schema, source = 'body') {
       const { error, value } = schema.validate(data, {
         abortEarly: false,
         stripUnknown: true,
+        messages: {
+          'string.empty': '{{#label}}不能为空',
+          'any.required': '{{#label}}为必填项',
+          'string.min': '{{#label}}长度不能少于 {{#limit}} 个字符',
+          'string.max': '{{#label}}长度不能超过 {{#limit}} 个字符',
+          'string.pattern.base': '{{#label}}格式不正确',
+          'string.email': '请输入有效的邮箱地址',
+          'number.base': '{{#label}}必须是数字',
+          'any.only': '{{#label}}必须是以下值之一: {{#valids}}',
+        },
       });
 
       if (error) {
@@ -35,9 +45,15 @@ function validateParams(schema) {
   return validate(schema, 'params');
 }
 
+const usernamePattern = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
+const phonePattern = /^(1[3-9]\d{9}|\+[1-9]\d{1,14})$/;
+const passwordPattern = /^(?=.*[a-zA-Z])(?=.*\d).+$/;
+
 const schemas = {
   id: Joi.object({
-    id: Joi.string().uuid().required(),
+    id: Joi.string().uuid().required().messages({
+      'string.guid': '无效的ID格式',
+    }),
   }),
 
   pagination: Joi.object({
@@ -48,34 +64,98 @@ const schemas = {
   }),
 
   login: Joi.object({
-    username: Joi.string().required(),
-    password: Joi.string().required(),
+    username: Joi.string().required().label('用户名'),
+    password: Joi.string().required().label('密码'),
   }),
 
   register: Joi.object({
-    username: Joi.string().min(3).max(50).required(),
-    email: Joi.string().email().required(),
-    password: Joi.string().min(6).max(100).required(),
-    fullName: Joi.string().max(100),
+    username: Joi.string()
+      .min(3)
+      .max(50)
+      .pattern(usernamePattern)
+      .required()
+      .label('用户名')
+      .messages({
+        'string.pattern.base': '用户名格式不正确，仅支持字母、数字、下划线和连字符，且必须以字母开头',
+      }),
+    email: Joi.string().email().max(100).required().label('邮箱'),
+    password: Joi.string()
+      .min(8)
+      .max(100)
+      .pattern(passwordPattern)
+      .required()
+      .label('密码')
+      .messages({
+        'string.pattern.base': '密码长度至少 8 位，且需包含字母和数字',
+      }),
+    fullName: Joi.string().max(100).required().label('姓名'),
   }),
 
   userCreate: Joi.object({
-    username: Joi.string().min(3).max(50).required(),
-    email: Joi.string().email().allow(null, ''),
-    password: Joi.string().min(6).max(100).required(),
-    fullName: Joi.string().max(100),
-    phone: Joi.string().max(20),
-    status: Joi.number().integer().valid(0, 1),
+    username: Joi.string()
+      .min(3)
+      .max(50)
+      .pattern(usernamePattern)
+      .required()
+      .label('用户名')
+      .messages({
+        'string.pattern.base': '用户名格式不正确，仅支持字母、数字、下划线和连字符，且必须以字母开头',
+      }),
+    email: Joi.string().email().max(100).allow(null, '').label('邮箱'),
+    password: Joi.string()
+      .min(8)
+      .max(100)
+      .pattern(passwordPattern)
+      .required()
+      .label('密码')
+      .messages({
+        'string.pattern.base': '密码长度至少 8 位，且需包含字母和数字',
+      }),
+    fullName: Joi.string().max(100).required().label('姓名'),
+    phone: Joi.string()
+      .max(20)
+      .pattern(phonePattern)
+      .allow('')
+      .label('手机号')
+      .messages({
+        'string.pattern.base': '请输入有效的手机号码',
+      }),
+    status: Joi.number().integer().valid(0, 1).label('状态').messages({
+      'any.only': '状态只能是 0 (禁用) 或 1 (启用)',
+    }),
     roleIds: Joi.array().items(Joi.string().uuid()),
   }),
 
   userUpdate: Joi.object({
-    username: Joi.string().min(3).max(50),
-    email: Joi.string().email().allow(null, ''),
-    password: Joi.string().min(6).max(100),
-    fullName: Joi.string().max(100),
-    phone: Joi.string().max(20),
-    status: Joi.number().integer().valid(0, 1),
+    username: Joi.string()
+      .min(3)
+      .max(50)
+      .pattern(usernamePattern)
+      .label('用户名')
+      .messages({
+        'string.pattern.base': '用户名格式不正确，仅支持字母、数字、下划线和连字符，且必须以字母开头',
+      }),
+    email: Joi.string().email().max(100).allow(null, '').label('邮箱'),
+    password: Joi.string()
+      .min(8)
+      .max(100)
+      .pattern(passwordPattern)
+      .label('密码')
+      .messages({
+        'string.pattern.base': '密码长度至少 8 位，且需包含字母和数字',
+      }),
+    fullName: Joi.string().max(100).label('姓名'),
+    phone: Joi.string()
+      .max(20)
+      .pattern(phonePattern)
+      .allow('')
+      .label('手机号')
+      .messages({
+        'string.pattern.base': '请输入有效的手机号码',
+      }),
+    status: Joi.number().integer().valid(0, 1).label('状态').messages({
+      'any.only': '状态只能是 0 (禁用) 或 1 (启用)',
+    }),
     roleIds: Joi.array().items(Joi.string().uuid()),
   }),
 
