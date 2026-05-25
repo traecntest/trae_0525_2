@@ -15,11 +15,21 @@ const EventsPage = {
         <div class="card-header">
           <div class="filter-bar">
             <input type="text" class="form-input" id="searchInput" placeholder="搜索事件..." style="width:200px;">
+            <select class="form-select" id="eventTypeFilter" style="width:140px;">
+              <option value="">全部类型</option>
+              <option value="ALERT">告警</option>
+              <option value="INCIDENT">事件</option>
+              <option value="MAINTENANCE">维护</option>
+              <option value="OPERATION">运维</option>
+              <option value="OTHER">其他</option>
+            </select>
             <select class="form-select" id="severityFilter" style="width:140px;">
               <option value="">全部级别</option>
               <option value="CRITICAL">紧急</option>
               <option value="MAJOR">严重</option>
               <option value="MINOR">一般</option>
+              <option value="WARNING">警告</option>
+              <option value="INFO">信息</option>
             </select>
             <select class="form-select" id="statusFilter" style="width:140px;">
               <option value="">全部状态</option>
@@ -38,7 +48,8 @@ const EventsPage = {
 
     document.getElementById('createBtn').addEventListener('click', () => this.showCreateModal());
     document.getElementById('searchBtn').addEventListener('click', () => {
-      this.filters.title = document.getElementById('searchInput').value;
+      this.filters.search = document.getElementById('searchInput').value;
+      this.filters.eventType = document.getElementById('eventTypeFilter').value;
       this.filters.severity = document.getElementById('severityFilter').value;
       this.filters.status = document.getElementById('statusFilter').value;
       this.currentPage = 1;
@@ -59,16 +70,20 @@ const EventsPage = {
       DataTable.render(document.getElementById('tableContainer'), {
         columns: [
           { key: 'title', label: '标题' },
-          { key: 'type', label: '类型' },
+          { key: 'eventType', label: '类型', render: (v) => {
+            const typeMap = { ALERT: '告警', INCIDENT: '事件', MAINTENANCE: '维护', OPERATION: '运维', OTHER: '其他' };
+            return typeMap[v] || v;
+          }},
           { key: 'severity', label: '级别', render: (v) => {
-            const colors = { CRITICAL: 'badge-danger', MAJOR: 'badge-warning', MINOR: 'badge-info' };
-            return `<span class="badge ${colors[v] || 'badge'}">${v}</span>`;
+            const colors = { CRITICAL: 'badge-danger', MAJOR: 'badge-warning', MINOR: 'badge-info', WARNING: 'badge-warning', INFO: 'badge-info' };
+            const severityMap = { CRITICAL: '紧急', MAJOR: '严重', MINOR: '一般', WARNING: '警告', INFO: '信息' };
+            return `<span class="badge ${colors[v] || 'badge'}">${severityMap[v] || v}</span>`;
           }},
           { key: 'status', label: '状态', render: (v) => {
             const badge = Helpers.getStatusBadge(v);
             return `<span class="badge ${badge.class}">${badge.text}</span>`;
           }},
-          { key: 'createdAt', label: '创建时间', render: (v) => Helpers.formatDate(v) },
+          { key: 'eventTime', label: '事件时间', render: (v) => Helpers.formatDate(v) },
         ],
         data: res.rows || [],
         pagination: { page: res.page, limit: res.limit, total: res.count },
@@ -91,7 +106,7 @@ const EventsPage = {
         });
       });
     } catch (err) {
-      document.getElementById('tableContainer').innerHTML = `<div class="alert alert-error">加载失败</div>`;
+      document.getElementById('tableContainer').innerHTML = `<div class="alert alert-error">加载失败: ${err.message}</div>`;
     }
   },
 
@@ -99,25 +114,31 @@ const EventsPage = {
     Modal.form({
       title: '创建事件',
       fields: [
-        { name: 'title', label: '标题', required: true },
-        { name: 'type', label: '类型', type: 'select', required: true, options: [
-          { value: 'INCIDENT', label: '事件' },
+        { name: 'title', label: '标题', required: true, validateType: 'title', helpText: '最多200个字符' },
+        { name: 'eventType', label: '类型', type: 'select', required: true, options: [
           { value: 'ALERT', label: '告警' },
-          { value: 'WARNING', label: '警告' },
-          { value: 'INFO', label: '信息' },
+          { value: 'INCIDENT', label: '事件' },
           { value: 'MAINTENANCE', label: '维护' },
+          { value: 'OPERATION', label: '运维' },
+          { value: 'OTHER', label: '其他' },
         ]},
         { name: 'severity', label: '严重级别', type: 'select', required: true, options: [
-          { value: 'CRITICAL', label: '紧急' },
-          { value: 'MAJOR', label: '严重' },
-          { value: 'MINOR', label: '一般' },
-          { value: 'WARNING', label: '警告' },
           { value: 'INFO', label: '信息' },
+          { value: 'WARNING', label: '警告' },
+          { value: 'MINOR', label: '一般' },
+          { value: 'MAJOR', label: '严重' },
+          { value: 'CRITICAL', label: '紧急' },
         ]},
+        { name: 'eventTime', label: '事件时间', type: 'datetime-local', required: true, helpText: '默认当前时间' },
         { name: 'description', label: '描述', type: 'textarea' },
       ],
       onSubmit: async (data) => {
         try {
+          if (data.eventTime) {
+            data.eventTime = new Date(data.eventTime).toISOString();
+          } else {
+            data.eventTime = new Date().toISOString();
+          }
           await API.events.create(data);
           Helpers.showToast('创建成功', 'success');
           this.loadData();
@@ -133,17 +154,19 @@ const EventsPage = {
   async viewEvent(id) {
     try {
       const event = await API.events.get(id);
+      const typeMap = { ALERT: '告警', INCIDENT: '事件', MAINTENANCE: '维护', OPERATION: '运维', OTHER: '其他' };
+      const severityMap = { CRITICAL: '紧急', MAJOR: '严重', MINOR: '一般', WARNING: '警告', INFO: '信息' };
       Modal.show({
         title: '事件详情',
         content: `
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
             <div><strong>标题:</strong> ${event.title}</div>
-            <div><strong>类型:</strong> ${event.type}</div>
-            <div><strong>级别:</strong> ${event.severity}</div>
+            <div><strong>类型:</strong> ${typeMap[event.eventType] || event.eventType}</div>
+            <div><strong>级别:</strong> ${severityMap[event.severity] || event.severity}</div>
             <div><strong>状态:</strong> ${event.status}</div>
-            <div style="grid-column: span 2;"><strong>描述:</strong> ${event.description || '-'}</div>
+            <div><strong>事件时间:</strong> ${Helpers.formatDate(event.eventTime)}</div>
             <div><strong>创建时间:</strong> ${Helpers.formatDate(event.createdAt)}</div>
-            <div><strong>更新时间:</strong> ${Helpers.formatDate(event.updatedAt)}</div>
+            <div style="grid-column: span 2;"><strong>描述:</strong> ${event.description || '-'}</div>
           </div>
         `,
         confirmText: '关闭',

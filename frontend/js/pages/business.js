@@ -2,6 +2,25 @@ const BusinessPage = {
   currentPage: 1,
   pageSize: 10,
 
+  objectTypeOptions: [
+    { value: 'PROJECT', label: '项目' },
+    { value: 'BUILDING', label: '建筑' },
+    { value: 'INFRASTRUCTURE', label: '基础设施' },
+    { value: 'LAND', label: '土地' },
+    { value: 'ASSET', label: '资产' },
+    { value: 'FACILITY', label: '设施' },
+    { value: 'OTHER', label: '其他' },
+  ],
+
+  statusOptions: [
+    { value: 'PLANNING', label: '规划中' },
+    { value: 'DESIGN', label: '设计中' },
+    { value: 'CONSTRUCTION', label: '建设中' },
+    { value: 'OPERATION', label: '运营中' },
+    { value: 'MAINTENANCE', label: '维护中' },
+    { value: 'DEMOLISHED', label: '已拆除' },
+  ],
+
   render(container) {
     container.innerHTML = `
       <div class="page-header">
@@ -14,13 +33,9 @@ const BusinessPage = {
         <div class="card-header">
           <div class="filter-bar">
             <input type="text" class="form-input" id="searchInput" placeholder="搜索对象..." style="width:200px;">
-            <select class="form-select" id="typeFilter" style="width:140px;">
+            <select class="form-select" id="objectTypeFilter" style="width:160px;">
               <option value="">全部类型</option>
-              <option value="BUILDING">建筑</option>
-              <option value="ROAD">道路</option>
-              <option value="BRIDGE">桥梁</option>
-              <option value="PARK">公园</option>
-              <option value="PIPELINE">管线</option>
+              ${this.objectTypeOptions.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('')}
             </select>
             <button class="btn" id="searchBtn">🔍 搜索</button>
           </div>
@@ -40,22 +55,35 @@ const BusinessPage = {
 
   async loadData() {
     try {
-      const name = document.getElementById('searchInput')?.value || '';
-      const type = document.getElementById('typeFilter')?.value || '';
+      const search = document.getElementById('searchInput')?.value || '';
+      const objectType = document.getElementById('objectTypeFilter')?.value || '';
       const res = await API.business.list({
         page: this.currentPage,
         limit: this.pageSize,
-        name,
-        type,
+        search,
+        objectType,
       });
+
+      const typeLabelMap = {};
+      this.objectTypeOptions.forEach(opt => typeLabelMap[opt.value] = opt.label);
+      const statusLabelMap = {};
+      this.statusOptions.forEach(opt => statusLabelMap[opt.value] = opt.label);
 
       DataTable.render(document.getElementById('tableContainer'), {
         columns: [
           { key: 'name', label: '名称' },
           { key: 'code', label: '编码' },
-          { key: 'type', label: '类型' },
+          { key: 'objectType', label: '类型', render: (v) => typeLabelMap[v] || v },
           { key: 'status', label: '状态', render: (v) => {
-            const badge = Helpers.getStatusBadge(v);
+            const statusMap = {
+              PLANNING: { class: 'badge-info', text: '规划中' },
+              DESIGN: { class: 'badge-info', text: '设计中' },
+              CONSTRUCTION: { class: 'badge-warning', text: '建设中' },
+              OPERATION: { class: 'badge-success', text: '运营中' },
+              MAINTENANCE: { class: 'badge-warning', text: '维护中' },
+              DEMOLISHED: { class: 'badge', text: '已拆除' },
+            };
+            const badge = statusMap[v] || { class: 'badge', text: v };
             return `<span class="badge ${badge.class}">${badge.text}</span>`;
           }},
           { key: 'createdAt', label: '创建时间', render: (v) => Helpers.formatDateShort(v) },
@@ -81,7 +109,7 @@ const BusinessPage = {
         });
       });
     } catch (err) {
-      document.getElementById('tableContainer').innerHTML = `<div class="alert alert-error">加载失败</div>`;
+      document.getElementById('tableContainer').innerHTML = `<div class="alert alert-error">加载失败: ${err.message}</div>`;
     }
   },
 
@@ -89,16 +117,10 @@ const BusinessPage = {
     Modal.form({
       title: '创建业务对象',
       fields: [
-        { name: 'name', label: '名称', required: true },
-        { name: 'code', label: '编码', required: true },
-        { name: 'type', label: '类型', type: 'select', required: true, options: [
-          { value: 'BUILDING', label: '建筑' },
-          { value: 'ROAD', label: '道路' },
-          { value: 'BRIDGE', label: '桥梁' },
-          { value: 'PARK', label: '公园' },
-          { value: 'PIPELINE', label: '管线' },
-          { value: 'OTHER', label: '其他' },
-        ]},
+        { name: 'name', label: '名称', required: true, validateType: 'fullName', helpText: '最多200个字符' },
+        { name: 'code', label: '编码', helpText: '可选，最多50个字符' },
+        { name: 'objectType', label: '类型', type: 'select', required: true, options: this.objectTypeOptions },
+        { name: 'status', label: '状态', type: 'select', options: this.statusOptions },
         { name: 'description', label: '描述', type: 'textarea' },
       ],
       onSubmit: async (data) => {
@@ -118,14 +140,19 @@ const BusinessPage = {
   async viewObject(id) {
     try {
       const obj = await API.business.get(id);
+      const typeLabelMap = {};
+      this.objectTypeOptions.forEach(opt => typeLabelMap[opt.value] = opt.label);
+      const statusLabelMap = {};
+      this.statusOptions.forEach(opt => statusLabelMap[opt.value] = opt.label);
+      
       Modal.show({
         title: '业务对象详情',
         content: `
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
             <div><strong>名称:</strong> ${obj.name}</div>
-            <div><strong>编码:</strong> ${obj.code}</div>
-            <div><strong>类型:</strong> ${obj.type}</div>
-            <div><strong>状态:</strong> ${obj.status}</div>
+            <div><strong>编码:</strong> ${obj.code || '-'}</div>
+            <div><strong>类型:</strong> ${typeLabelMap[obj.objectType] || obj.objectType}</div>
+            <div><strong>状态:</strong> ${statusLabelMap[obj.status] || obj.status}</div>
             <div style="grid-column: span 2;"><strong>描述:</strong> ${obj.description || '-'}</div>
             <div><strong>创建时间:</strong> ${Helpers.formatDate(obj.createdAt)}</div>
             <div><strong>更新时间:</strong> ${Helpers.formatDate(obj.updatedAt)}</div>

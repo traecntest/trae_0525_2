@@ -2,6 +2,12 @@ const ScenesPage = {
   currentPage: 1,
   pageSize: 10,
 
+  statusOptions: [
+    { value: 'DRAFT', label: '草稿' },
+    { value: 'PUBLISHED', label: '已发布' },
+    { value: 'ARCHIVED', label: '已归档' },
+  ],
+
   render(container) {
     container.innerHTML = `
       <div class="page-header">
@@ -11,26 +17,53 @@ const ScenesPage = {
         </div>
       </div>
       <div class="card">
+        <div class="card-header">
+          <div class="filter-bar">
+            <select class="form-select" id="statusFilter" style="width:160px;">
+              <option value="">全部状态</option>
+              ${this.statusOptions.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('')}
+            </select>
+            <button class="btn" id="searchBtn">🔍 搜索</button>
+          </div>
+        </div>
         <div class="card-body" id="tableContainer"></div>
       </div>
     `;
 
     document.getElementById('createBtn').addEventListener('click', () => this.showCreateModal());
+    document.getElementById('searchBtn').addEventListener('click', () => {
+      this.currentPage = 1;
+      this.loadData();
+    });
+
     this.loadData();
   },
 
   async loadData() {
     try {
+      const status = document.getElementById('statusFilter')?.value || '';
       const res = await API.scenes.list({
         page: this.currentPage,
         limit: this.pageSize,
+        status,
       });
+
+      const statusLabelMap = {};
+      this.statusOptions.forEach(opt => statusLabelMap[opt.value] = opt.label);
 
       DataTable.render(document.getElementById('tableContainer'), {
         columns: [
           { key: 'name', label: '场景名称' },
-          { key: 'description', label: '描述' },
-          { key: 'isPublic', label: '公开', render: (v) => v ? '是' : '否' },
+          { key: 'code', label: '编码' },
+          { key: 'status', label: '状态', render: (v) => {
+            const statusMap = {
+              DRAFT: { class: 'badge-info', text: '草稿' },
+              PUBLISHED: { class: 'badge-success', text: '已发布' },
+              ARCHIVED: { class: 'badge', text: '已归档' },
+            };
+            const badge = statusMap[v] || { class: 'badge', text: v };
+            return `<span class="badge ${badge.class}">${badge.text}</span>`;
+          }},
           { key: 'createdAt', label: '创建时间', render: (v) => Helpers.formatDateShort(v) },
         ],
         data: res.rows || [],
@@ -56,7 +89,7 @@ const ScenesPage = {
         });
       });
     } catch (err) {
-      document.getElementById('tableContainer').innerHTML = `<div class="alert alert-error">加载失败</div>`;
+      document.getElementById('tableContainer').innerHTML = `<div class="alert alert-error">加载失败: ${err.message}</div>`;
     }
   },
 
@@ -64,16 +97,14 @@ const ScenesPage = {
     Modal.form({
       title: '创建场景',
       fields: [
-        { name: 'name', label: '场景名称', required: true },
+        { name: 'name', label: '场景名称', required: true, validateType: 'fullName', helpText: '最多200个字符' },
+        { name: 'code', label: '场景编码', required: true, helpText: '最多50个字符' },
         { name: 'description', label: '描述', type: 'textarea' },
-        { name: 'isPublic', label: '公开', type: 'select', options: [
-          { value: 'true', label: '是' },
-          { value: 'false', label: '否' },
-        ]},
+        { name: 'status', label: '状态', type: 'select', options: this.statusOptions },
+        { name: 'backgroundColor', label: '背景颜色', helpText: '默认 #87CEEB' },
       ],
       onSubmit: async (data) => {
         try {
-          data.isPublic = data.isPublic === 'true';
           await API.scenes.create(data);
           Helpers.showToast('创建成功', 'success');
           this.loadData();
@@ -92,17 +123,15 @@ const ScenesPage = {
       Modal.form({
         title: '编辑场景',
         fields: [
-          { name: 'name', label: '场景名称', required: true },
+          { name: 'name', label: '场景名称', required: true, validateType: 'fullName' },
+          { name: 'code', label: '场景编码', required: true },
           { name: 'description', label: '描述', type: 'textarea' },
-          { name: 'isPublic', label: '公开', type: 'select', options: [
-            { value: 'true', label: '是' },
-            { value: 'false', label: '否' },
-          ]},
+          { name: 'status', label: '状态', type: 'select', options: this.statusOptions },
+          { name: 'backgroundColor', label: '背景颜色', helpText: '默认 #87CEEB' },
         ],
-        values: { ...scene, isPublic: String(scene.isPublic) },
+        values: scene,
         onSubmit: async (data) => {
           try {
-            data.isPublic = data.isPublic === 'true';
             await API.scenes.update(id, data);
             Helpers.showToast('更新成功', 'success');
             this.loadData();
