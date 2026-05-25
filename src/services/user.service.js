@@ -83,16 +83,23 @@ class UserService {
 
     const hashedPassword = await bcrypt.hash(userData.password || '123456', 10);
 
-    const user = await User.create({
+    const userDataToCreate = {
       id: generateId('user'),
       tenantId,
       username: userData.username,
-      email: userData.email,
       password: hashedPassword,
       fullName: userData.fullName,
       phone: userData.phone,
       status: userData.status ?? 1,
-    });
+    };
+
+    if (userData.email && userData.email.trim() !== '') {
+      userDataToCreate.email = userData.email.trim();
+    } else {
+      userDataToCreate.email = null;
+    }
+
+    const user = await User.create(userDataToCreate);
 
     if (userData.roleIds?.length) {
       const roles = await Role.findAll({
@@ -142,7 +149,13 @@ class UserService {
 
     const updateData = {};
     if (userData.username) updateData.username = userData.username;
-    if (userData.email) updateData.email = userData.email;
+    if (userData.email !== undefined) {
+      if (userData.email && userData.email.trim() !== '') {
+        updateData.email = userData.email.trim();
+      } else {
+        updateData.email = null;
+      }
+    }
     if (userData.fullName !== undefined) updateData.fullName = userData.fullName;
     if (userData.phone !== undefined) updateData.phone = userData.phone;
     if (userData.status !== undefined) updateData.status = userData.status;

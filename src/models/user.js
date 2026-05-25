@@ -31,9 +31,16 @@ User.init(
     },
     email: {
       type: DataTypes.STRING(100),
-      allowNull: false,
+      allowNull: true,
       validate: {
-        isEmail: true,
+        isEmail: function(value) {
+          if (value && value !== '') {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(value)) {
+              throw new Error('Invalid email format');
+            }
+          }
+        },
       },
     },
     password: {
