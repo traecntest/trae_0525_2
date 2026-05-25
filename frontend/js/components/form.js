@@ -150,30 +150,35 @@ const Form = {
       placeholder = '',
       options = [],
       helpText = '',
+      defaultValue = '',
     } = field;
 
     let inputHtml = '';
+    let displayValue = value || defaultValue;
 
     switch (type) {
       case 'select':
         inputHtml = `
           <select class="form-select" name="${name}" ${required ? 'required' : ''}>
             <option value="">请选择</option>
-            ${options.map(opt => `<option value="${opt.value}" ${value === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
+            ${options.map(opt => `<option value="${opt.value}" ${displayValue === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
           </select>
         `;
         break;
       case 'textarea':
-        inputHtml = `<textarea class="form-textarea" name="${name}" placeholder="${placeholder}" ${required ? 'required' : ''}>${value}</textarea>`;
+        inputHtml = `<textarea class="form-textarea" name="${name}" placeholder="${placeholder}" ${required ? 'required' : ''}>${displayValue}</textarea>`;
         break;
       case 'number':
-        inputHtml = `<input type="number" class="form-input" name="${name}" value="${value}" placeholder="${placeholder}" ${required ? 'required' : ''} step="any">`;
+        inputHtml = `<input type="number" class="form-input" name="${name}" value="${displayValue}" placeholder="${placeholder}" ${required ? 'required' : ''} step="any">`;
         break;
       case 'date':
-        inputHtml = `<input type="date" class="form-input" name="${name}" value="${value}" ${required ? 'required' : ''}>`;
+        inputHtml = `<input type="date" class="form-input" name="${name}" value="${displayValue}" ${required ? 'required' : ''}>`;
+        break;
+      case 'datetime-local':
+        inputHtml = `<input type="datetime-local" class="form-input" name="${name}" value="${displayValue}" ${required ? 'required' : ''}>`;
         break;
       case 'email':
-        inputHtml = `<input type="text" class="form-input" name="${name}" value="${value}" placeholder="${placeholder}" ${required ? 'required' : ''}>`;
+        inputHtml = `<input type="text" class="form-input" name="${name}" value="${displayValue}" placeholder="${placeholder}" ${required ? 'required' : ''}>`;
         break;
       case 'password':
         const passwordRules = ValidationRules.password;
@@ -181,12 +186,12 @@ const Form = {
         inputHtml = `<input type="password" class="form-input" name="${name}" placeholder="${passwordPlaceholder}" ${required ? 'required' : ''}>`;
         break;
       case 'checkbox':
-        inputHtml = `<label class="form-checkbox"><input type="checkbox" name="${name}" ${value ? 'checked' : ''}><span>${label}</span></label>`;
+        inputHtml = `<label class="form-checkbox"><input type="checkbox" name="${name}" ${displayValue ? 'checked' : ''}><span>${label}</span></label>`;
         return `<div class="form-group">${inputHtml}</div>`;
       case 'hidden':
-        return `<input type="hidden" name="${name}" value="${value}">`;
+        return `<input type="hidden" name="${name}" value="${displayValue}">`;
       default:
-        inputHtml = `<input type="text" class="form-input" name="${name}" value="${value}" placeholder="${placeholder}" ${required ? 'required' : ''}>`;
+        inputHtml = `<input type="text" class="form-input" name="${name}" value="${displayValue}" placeholder="${placeholder}" ${required ? 'required' : ''}>`;
     }
 
     return `

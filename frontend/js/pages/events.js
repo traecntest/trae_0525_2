@@ -111,10 +111,14 @@ const EventsPage = {
   },
 
   showCreateModal() {
+    // 获取当前时间并格式化为 datetime-local 需要的格式 (YYYY-MM-DDTHH:mm)
+    const now = new Date();
+    const defaultDateTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    
     Modal.form({
       title: '创建事件',
       fields: [
-        { name: 'title', label: '标题', required: true, validateType: 'title', helpText: '最多200个字符' },
+        { name: 'title', label: '标题', required: true, helpText: '最多200个字符' },
         { name: 'eventType', label: '类型', type: 'select', required: true, options: [
           { value: 'ALERT', label: '告警' },
           { value: 'INCIDENT', label: '事件' },
@@ -122,19 +126,20 @@ const EventsPage = {
           { value: 'OPERATION', label: '运维' },
           { value: 'OTHER', label: '其他' },
         ]},
-        { name: 'severity', label: '严重级别', type: 'select', required: true, options: [
+        { name: 'severity', label: '严重级别', type: 'select', required: true, defaultValue: 'INFO', options: [
           { value: 'INFO', label: '信息' },
           { value: 'WARNING', label: '警告' },
           { value: 'MINOR', label: '一般' },
           { value: 'MAJOR', label: '严重' },
           { value: 'CRITICAL', label: '紧急' },
         ]},
-        { name: 'eventTime', label: '事件时间', type: 'datetime-local', required: true, helpText: '默认当前时间' },
+        { name: 'eventTime', label: '事件时间', type: 'datetime-local', required: true, defaultValue: defaultDateTime, helpText: '请选择事件发生的时间' },
         { name: 'description', label: '描述', type: 'textarea' },
       ],
       onSubmit: async (data) => {
         try {
           if (data.eventTime) {
+            // datetime-local 的值格式为 YYYY-MM-DDTHH:mm，需要转换为 ISO 格式
             data.eventTime = new Date(data.eventTime).toISOString();
           } else {
             data.eventTime = new Date().toISOString();
