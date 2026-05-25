@@ -9,22 +9,12 @@ function validate(schema, source = 'body') {
       const { error, value } = schema.validate(data, {
         abortEarly: false,
         stripUnknown: true,
-        messages: {
-          'string.empty': '{{#label}}不能为空',
-          'any.required': '{{#label}}为必填项',
-          'string.min': '{{#label}}长度不能少于 {{#limit}} 个字符',
-          'string.max': '{{#label}}长度不能超过 {{#limit}} 个字符',
-          'string.pattern.base': '{{#label}}格式不正确',
-          'string.email': '请输入有效的邮箱地址',
-          'number.base': '{{#label}}必须是数字',
-          'any.only': '{{#label}}必须是以下值之一: {{#valids}}',
-        },
       });
 
       if (error) {
         const errors = error.details.map((detail) => ({
           field: detail.path.join('.'),
-          message: detail.message,
+          message: translateErrorMessage(detail),
         }));
         throw new ValidationError('Validation failed', errors);
       }
@@ -35,6 +25,40 @@ function validate(schema, source = 'body') {
       next(error);
     }
   };
+}
+
+function translateErrorMessage(detail) {
+  const { type, context } = detail;
+  
+  switch (type) {
+    case 'any.required':
+      return `${context.label}为必填项`;
+    case 'string.empty':
+      return `${context.label}不能为空`;
+    case 'string.min':
+      return `${context.label}长度不能少于 ${context.limit} 个字符`;
+    case 'string.max':
+      return `${context.label}长度不能超过 ${context.limit} 个字符`;
+    case 'string.pattern.base':
+      return context.label === '用户名' 
+        ? '用户名格式不正确，仅支持字母、数字、下划线和连字符，且必须以字母开头'
+        : context.label === '密码'
+        ? '密码长度至少 8 位，且需包含字母和数字'
+        : context.label === '手机号'
+        ? '请输入有效的手机号码'
+        : `${context.label}格式不正确`;
+    case 'string.email':
+      return '请输入有效的邮箱地址';
+    case 'number.base':
+      return `${context.label}必须是数字`;
+    case 'any.only':
+      if (context.label === '状态') {
+        return '状态只能是 0 (禁用) 或 1 (启用)';
+      }
+      return `${context.label}必须是以下值之一: ${context.valids.join(', ')}`;
+    default:
+      return detail.message;
+  }
 }
 
 function validateQuery(schema) {

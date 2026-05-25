@@ -34,11 +34,12 @@ const API = {
       }
 
       if (!response.ok) {
-        let errorMessage = data.message || 'Request failed';
+        let error = new Error(data.message || 'Request failed');
+        // 如果后端返回了验证错误数组，附加到错误对象上
         if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
-          errorMessage = data.errors.map(e => e.message).join('; ');
+          error.errors = data.errors;
         }
-        throw new Error(errorMessage);
+        throw error;
       }
 
       return data.data || data;

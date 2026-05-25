@@ -67,54 +67,39 @@ const Modal = {
       submitText = '提交',
     } = options;
 
-    let formHtml = '';
-    fields.forEach(field => {
-      const value = values[field.name] ?? '';
-      if (field.type === 'select') {
-        formHtml += `
-          <div class="form-group">
-            <label class="form-label">${field.label}${field.required ? ' *' : ''}</label>
-            <select class="form-select" name="${field.name}" ${field.required ? 'required' : ''}>
-              <option value="">请选择</option>
-              ${field.options.map(opt => `<option value="${opt.value}" ${value === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
-            </select>
-          </div>
-        `;
-      } else if (field.type === 'textarea') {
-        formHtml += `
-          <div class="form-group">
-            <label class="form-label">${field.label}${field.required ? ' *' : ''}</label>
-            <textarea class="form-textarea" name="${field.name}" ${field.required ? 'required' : ''} ${field.minLength ? `minlength="${field.minLength}"` : ''} ${field.maxLength ? `maxlength="${field.maxLength}"` : ''} placeholder="${field.placeholder || ''}">${value}</textarea>
-          </div>
-        `;
-      } else {
-        formHtml += `
-          <div class="form-group">
-            <label class="form-label">${field.label}${field.required ? ' *' : ''}</label>
-            <input type="${field.type || 'text'}" class="form-input" name="${field.name}" value="${value}" ${field.required ? 'required' : ''} ${field.minLength ? `minlength="${field.minLength}"` : ''} ${field.maxLength ? `maxlength="${field.maxLength}"` : ''} ${field.min ? `min="${field.min}"` : ''} ${field.max ? `max="${field.max}"` : ''} ${field.pattern ? `pattern="${field.pattern}"` : ''} placeholder="${field.placeholder || ''}" ${field.type === 'number' ? 'step="any"' : ''}>
-          </div>
-        `;
-      }
+    const overlay = this.show({
+      title,
+      content: `<div id="modalFormContainer"></div>`,
+      showFooter: false,
+      onConfirm: null,
     });
 
-    return this.show({
-      title,
-      content: `<form id="modalForm">${formHtml}</form>`,
-      onConfirm: (overlay) => {
-        const form = overlay.querySelector('#modalForm');
-        if (!form.checkValidity()) {
-          form.reportValidity();
-          return false;
+    // 使用我们的 Form 组件来渲染表单
+    const formContainer = overlay.querySelector('#modalFormContainer');
+    Form.render(formContainer, {
+      fields,
+      values,
+      submitText,
+      onSubmit: async (data) => {
+        if (onSubmit) {
+          const result = onSubmit(data);
+          if (result instanceof Promise) {
+            return result.then((shouldClose) => {
+              if (shouldClose !== false) {
+                overlay.remove();
+              }
+            });
+          } else if (result !== false) {
+            overlay.remove();
+          }
+          return result;
         }
-        const formData = new FormData(form);
-        const data = {};
-        formData.forEach((value, key) => {
-          data[key] = value;
-        });
-        if (onSubmit) return onSubmit(data);
+        overlay.remove();
         return true;
       },
     });
+
+    return overlay;
   },
 
   alert(message, type = 'info') {
