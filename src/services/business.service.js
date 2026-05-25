@@ -62,11 +62,17 @@ class BusinessService {
   }
 
   async createObject(tenantId, objectData, userId) {
+    const { longitude, latitude, ...rest } = objectData;
+    const { fn } = require('sequelize');
+    const location = fn('ST_SRID', fn('POINT', longitude, latitude), 4326);
+    
     const object = await BusinessObject.create({
       id: generateId(),
       tenantId,
       createdBy: userId,
-      ...objectData,
+      location,
+      srid: 4326,
+      ...rest,
     });
 
     await this.invalidateCache(tenantId);

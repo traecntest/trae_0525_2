@@ -134,6 +134,8 @@ const EventsPage = {
           { value: 'CRITICAL', label: '紧急' },
         ]},
         { name: 'eventTime', label: '事件时间', type: 'datetime-local', required: true, defaultValue: defaultDateTime, helpText: '请选择事件发生的时间' },
+        { name: 'longitude', label: '经度', type: 'number', defaultValue: 116.3972, helpText: '范围: -180 到 180' },
+        { name: 'latitude', label: '纬度', type: 'number', defaultValue: 39.9075, helpText: '范围: -90 到 90' },
         { name: 'description', label: '描述', type: 'textarea' },
       ],
       onSubmit: async (data) => {
@@ -144,6 +146,9 @@ const EventsPage = {
           } else {
             data.eventTime = new Date().toISOString();
           }
+          // 确保经度和纬度是数字
+          data.longitude = parseFloat(data.longitude) || 116.3972;
+          data.latitude = parseFloat(data.latitude) || 39.9075;
           await API.events.create(data);
           Helpers.showToast('创建成功', 'success');
           this.loadData();

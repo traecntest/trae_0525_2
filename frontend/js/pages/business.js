@@ -117,14 +117,26 @@ const BusinessPage = {
     Modal.form({
       title: '创建业务对象',
       fields: [
-        { name: 'name', label: '名称', required: true, validateType: 'fullName', helpText: '最多200个字符' },
+        { name: 'name', label: '名称', required: true, helpText: '最多200个字符' },
         { name: 'code', label: '编码', helpText: '可选，最多50个字符' },
         { name: 'objectType', label: '类型', type: 'select', required: true, options: this.objectTypeOptions },
         { name: 'status', label: '状态', type: 'select', options: this.statusOptions },
+        { name: 'address', label: '地址' },
+        { name: 'longitude', label: '经度', type: 'number', defaultValue: 116.3972, helpText: '范围: -180 到 180' },
+        { name: 'latitude', label: '纬度', type: 'number', defaultValue: 39.9075, helpText: '范围: -90 到 90' },
+        { name: 'area', label: '占地面积(㎡)', type: 'number', helpText: '单位：平方米' },
+        { name: 'floorArea', label: '建筑面积(㎡)', type: 'number', helpText: '单位：平方米' },
+        { name: 'height', label: '高度(米)', type: 'number', helpText: '单位：米' },
         { name: 'description', label: '描述', type: 'textarea' },
       ],
       onSubmit: async (data) => {
         try {
+          // 确保数字字段是正确的类型
+          data.longitude = parseFloat(data.longitude) || 116.3972;
+          data.latitude = parseFloat(data.latitude) || 39.9075;
+          if (data.area !== undefined && data.area !== '') data.area = parseFloat(data.area) || null;
+          if (data.floorArea !== undefined && data.floorArea !== '') data.floorArea = parseFloat(data.floorArea) || null;
+          if (data.height !== undefined && data.height !== '') data.height = parseFloat(data.height) || null;
           await API.business.create(data);
           Helpers.showToast('创建成功', 'success');
           this.loadData();

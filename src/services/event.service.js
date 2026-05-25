@@ -69,11 +69,17 @@ class EventService {
   }
 
   async createEvent(tenantId, eventData, userId) {
+    const { longitude, latitude, ...rest } = eventData;
+    const { Op, fn } = require('sequelize');
+    const location = fn('ST_SRID', fn('POINT', longitude, latitude), 4326);
+    
     const event = await Event.create({
       id: generateId(),
       tenantId,
       createdBy: userId,
-      ...eventData,
+      location,
+      srid: 4326,
+      ...rest,
     });
 
     await this.invalidateCache(tenantId);

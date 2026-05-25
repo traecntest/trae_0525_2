@@ -249,9 +249,11 @@ const schemas = {
     severity: Joi.string()
       .valid('INFO', 'WARNING', 'MINOR', 'MAJOR', 'CRITICAL')
       .default('INFO'),
-    title: Joi.string().required(),
+    title: Joi.string().required().max(200),
     description: Joi.string().allow(''),
     eventTime: Joi.date().required(),
+    longitude: Joi.number().min(-180).max(180).default(116.3972),
+    latitude: Joi.number().min(-90).max(90).default(39.9075),
     relatedModelId: Joi.string().uuid().allow(null),
     relatedDeviceId: Joi.string().uuid().allow(null),
   }),
@@ -268,8 +270,8 @@ const schemas = {
         'OTHER'
       )
       .required(),
-    name: Joi.string().required(),
-    code: Joi.string(),
+    name: Joi.string().required().max(200),
+    code: Joi.string().max(50),
     description: Joi.string().allow(''),
     status: Joi.string()
       .valid(
@@ -281,8 +283,14 @@ const schemas = {
         'DEMOLISHED'
       )
       .default('PLANNING'),
+    longitude: Joi.number().min(-180).max(180).default(116.3972),
+    latitude: Joi.number().min(-90).max(90).default(39.9075),
+    area: Joi.number().min(0).allow(null),
+    floorArea: Joi.number().min(0).allow(null),
+    height: Joi.number().min(0).allow(null),
     startDate: Joi.date().allow(null),
     endDate: Joi.date().allow(null),
+    address: Joi.string().allow(''),
     attributes: Joi.object(),
     tags: Joi.array().items(Joi.string()),
   }),
